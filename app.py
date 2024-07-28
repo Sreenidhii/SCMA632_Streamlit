@@ -61,12 +61,22 @@ st.pyplot(fig)
 
 # Radar chart for weather comparisons
 st.write("Weather Comparisons")
+
 def radar_chart(data, labels):
+    # Ensure data is a list or array-like
+    if isinstance(data, pd.Series):
+        values = data.values
+    else:
+        values = np.array(data)
+    
+    # Ensure the data is in the correct format
+    if len(values) != len(labels):
+        raise ValueError("Length of data and labels must match.")
+
     num_vars = len(labels)
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
-    values = data.tolist()
-    values += values[:1]
-    angles += angles[:1]
+    values = np.concatenate((values, [values[0]]))  # Close the circle
+    angles += angles[:1]  # Complete the loop
 
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
     ax.fill(angles, values, color='blue', alpha=0.25)
@@ -75,7 +85,7 @@ def radar_chart(data, labels):
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels)
     ax.set_title('Weather Metrics Comparison')
-    
+
     return fig
 
 # Sample data for radar chart

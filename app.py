@@ -1,75 +1,85 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
 
-# Initialize session state
-if 'transactions' not in st.session_state:
-    st.session_state.transactions = pd.DataFrame(columns=['Date', 'Category', 'Amount', 'Type'])
+# Initialize sample data
+@st.cache
+def load_weather_data():
+    # Sample historical weather data
+    data = {
+        'Date': pd.date_range(start='2024-01-01', periods=30, freq='D'),
+        'Temperature': np.random.uniform(low=0, high=35, size=30),  # Temperature in Celsius
+        'Precipitation': np.random.uniform(low=0, high=10, size=30)  # Precipitation in mm
+    }
+    return pd.DataFrame(data)
 
-if 'savings_goals' not in st.session_state:
-    st.session_state.savings_goals = pd.DataFrame(columns=['Goal', 'Amount', 'Progress'])
+weather_data = load_weather_data()
 
 # App title
-st.title('Personal Finance Tracker')
+st.title('Weather Dashboard')
 
-# Transaction entry form
-with st.expander("Add New Transaction"):
-    with st.form("transaction_form"):
-        date = st.date_input("Date")
-        category = st.selectbox("Category", ["Food", "Transportation", "Entertainment", "Other"])
-        amount = st.number_input("Amount", min_value=0.0)
-        transaction_type = st.radio("Type", ["Expense", "Income"])
-        submitted = st.form_submit_button("Add Transaction")
+# Current weather conditions (static for this example)
+st.subheader('Current Weather Conditions')
+st.write("Location: Example City")
+st.write("Temperature: 25°C")
+st.write("Precipitation: 2 mm")
+st.write("Condition: Partly Cloudy")
 
-        if submitted:
-            new_entry = pd.DataFrame([[date, category, amount, transaction_type]], columns=['Date', 'Category', 'Amount', 'Type'])
-            st.session_state.transactions = pd.concat([st.session_state.transactions, new_entry], ignore_index=True)
-            st.success("Transaction added!")
+# Forecast (static for this example)
+st.subheader('Weather Forecast')
+st.write("Forecast for the next 7 days:")
+forecast_data = {
+    'Day': ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    'Temperature': np.random.uniform(low=15, high=30, size=7),
+    'Precipitation': np.random.uniform(low=0, high=5, size=7)
+}
+forecast_df = pd.DataFrame(forecast_data)
+st.dataframe(forecast_df)
 
-# Savings goal entry form
-with st.expander("Add Savings Goal"):
-    with st.form("savings_goal_form"):
-        goal_name = st.text_input("Goal Name")
-        goal_amount = st.number_input("Goal Amount", min_value=0.0)
-        progress = st.number_input("Current Progress", min_value=0.0)
-        goal_submitted = st.form_submit_button("Add Savings Goal")
+# Historical data visualization
+st.subheader('Historical Weather Data')
 
-        if goal_submitted and goal_name:
-            new_goal = pd.DataFrame([[goal_name, goal_amount, progress]], columns=['Goal', 'Amount', 'Progress'])
-            st.session_state.savings_goals = pd.concat([st.session_state.savings_goals, new_goal], ignore_index=True)
-            st.success("Savings goal added!")
-
-# Display transactions
-st.subheader('Transaction Data')
-st.dataframe(st.session_state.transactions)
-
-# Display savings goals
-st.subheader('Savings Goals')
-st.dataframe(st.session_state.savings_goals)
-
-# Plot expense vs income
-st.subheader('Expense vs Income')
+# Line chart for temperature trends
+st.write("Temperature Trends Over the Last Month")
 fig, ax = plt.subplots()
-expense_data = st.session_state.transactions[st.session_state.transactions['Type'] == 'Expense']
-income_data = st.session_state.transactions[st.session_state.transactions['Type'] == 'Income']
-expense_data.groupby('Date')['Amount'].sum().plot(kind='line', label='Expenses', ax=ax)
-income_data.groupby('Date')['Amount'].sum().plot(kind='line', label='Income', ax=ax)
-ax.set_title('Expenses vs Income Over Time')
-ax.set_ylabel('Amount')
-ax.legend()
+ax.plot(weather_data['Date'], weather_data['Temperature'], marker='o', linestyle='-', color='b')
+ax.set_title('Temperature Trend')
+ax.set_xlabel('Date')
+ax.set_ylabel('Temperature (°C)')
 st.pyplot(fig)
 
-# Plot expenses by category
-st.subheader('Expenses by Category')
+# Bar chart for precipitation levels
+st.write("Precipitation Levels Over the Last Month")
 fig, ax = plt.subplots()
-expense_data.groupby('Category')['Amount'].sum().plot(kind='pie', autopct='%1.1f%%', ax=ax)
-ax.set_title('Expenses by Category')
+ax.bar(weather_data['Date'], weather_data['Precipitation'], color='blue')
+ax.set_title('Precipitation Levels')
+ax.set_xlabel('Date')
+ax.set_ylabel('Precipitation (mm)')
 st.pyplot(fig)
 
-# Plot savings progress
-st.subheader('Savings Goals Progress')
-fig, ax = plt.subplots()
-st.session_state.savings_goals.set_index('Goal')['Progress'].plot(kind='bar', ax=ax)
-ax.set_title('Savings Goals Progress')
-ax.set_ylabel('Amount')
+# Radar chart for weather comparisons
+st.write("Weather Comparisons")
+def radar_chart(data, labels):
+    num_vars = len(labels)
+    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+    values = data.tolist()
+    values += values[:1]
+    angles += angles[:1]
+
+    fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
+    ax.fill(angles, values, color='blue', alpha=0.25)
+    ax.plot(angles, values, color='blue', linewidth=2)
+    ax.set_yticklabels([])
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(labels)
+    ax.set_title('Weather Metrics Comparison')
+    
+    return fig
+
+# Sample data for radar chart
+labels = ['Temperature', 'Precipitation', 'Humidity', 'Wind Speed']
+values = [20, 3, 60, 5]  # Example values
+fig = radar_chart(values, labels)
 st.pyplot(fig)
